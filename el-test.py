@@ -48,7 +48,7 @@ import time
 
 def create_documents():
     actions = []
-    filelist = glob.glob("extracted/AA/*")
+    filelist = glob.glob("AA/*")
     for filename in tqdm.tqdm(filelist):
         with open(filename) as f:
             lines = f.readlines()
@@ -57,7 +57,5 @@ def create_documents():
                 src = {"id":j["id"], "url":j["url"],'title':j['title'],'text_ngram':j['text'], 'text_token':j['text']}
                 yield {'_index':"jpwiki",'_id':j['id'],'_source':src}
 
-elasticsearch.helpers.bulk(es, actions=create_documents(),chunk_size=100)
+elasticsearch.helpers.bulk(es, actions=create_documents(),chunk_size=200)
 
-# 内部接続を閉じる
-es.close()

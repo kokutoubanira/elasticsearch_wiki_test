@@ -1,0 +1,39 @@
+#global config
+global:
+  scrape_interval:     15s
+  evaluation_interval: 5s
+  scrape_timeout:     5s
+  #query_log_file: <string>
+  external_labels:
+    monitor: 'monitor'
+# Scrape configs only contain one scrape target
+scrape_configs:
+  - job_name: 'prometheus'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'es01'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    metrics_path: "/_prometheus/metrics"
+    static_configs:
+      - targets: ['es01:9200']
+  - job_name: 'es02'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    metrics_path: "/_prometheus/metrics"
+    static_configs:
+      - targets: ['es02:9200']
+  - job_name: 'es03'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    metrics_path: "/_prometheus/metrics"
+    static_configs:
+      - targets: ['es03:9200']
+  - job_name: 'cadvisor'
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["cadvisor:8080"]
