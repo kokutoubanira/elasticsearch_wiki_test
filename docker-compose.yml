@@ -104,33 +104,43 @@ services:
       - es02:es02
       - es03:es03
       - cadvisor:cadvisor
+      - node-exporter:node-exporter
+      - es01_exporter:es01_exporter
     networks:
       - elastic
-  node-exporter:
-    image: prom/node-exporter:v1.2.0
-    container_name: node-exporter
-    restart: unless-stopped
-    mem_limit: 128mb
-    ports:
-      - '9100:9100'
   grafana:
     image: grafana/grafana
     container_name: grafana
-    mem_limit: 256mb
     restart: always
     ports:
       - '3000:3000'
     links:
       - prometheus:prometheus
       - cadvisor:cadvisor
-      - node-exporter:node-exporter
     environment:
       GF_SECURITY_ADMIN_USER: yourname
       GF_SECURITY_ADMIN_PASSWORD: password
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_USERS_ALLOW_ORG_CREATE: "false"
-
-
+    networks:
+      - elastic
+  node-exporter:
+    image: prom/node-exporter:v1.2.0
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - '9100:9100'
+    networks: 
+      - elastic
+  es01_exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    container_name: es01_exporter
+    command:
+     - '--es.uri=http://es01:9200'
+    ports:
+      - 9018:9018
+    networks: 
+      - elastic
 volumes:
   data01:
     driver: local
