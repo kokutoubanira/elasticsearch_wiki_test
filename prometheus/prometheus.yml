@@ -46,3 +46,11 @@ scrape_configs:
     scrape_interval: 5s
     static_configs:
     - targets: ['es01_exporter:9108']
+  - job_name: 'es02_exporter'
+    scrape_interval: 5s
+    static_configs:
+    - targets: ['es02_exporter:9108']
+  - job_name: 'es03_exporter'
+    scrape_interval: 5s
+    static_configs:
+    - targets: ['es03_exporter:9108']

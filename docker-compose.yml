@@ -71,8 +71,7 @@ services:
     environment:
       HOSTS: >
         ES1,http://es01:9200
-        ES2,http://es02:9200
-        ES3,http://es03:9200
+        ES2,httr-compose downtp://es03:9200
     links:
       - es01:es01
       - es02:es02
@@ -106,6 +105,8 @@ services:
       - cadvisor:cadvisor
       - node-exporter:node-exporter
       - es01_exporter:es01_exporter
+      - es02_exporter:es02_exporter
+      - es03_exporter:es03_exporter
     networks:
       - elastic
   grafana:
@@ -128,6 +129,15 @@ services:
     image: prom/node-exporter:v1.2.0
     container_name: node-exporter
     restart: unless-stopped
+    volumes: 
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command: 
+      - '--path.procfs=/host/proc' 
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
     ports:
       - '9100:9100'
     networks: 
@@ -139,6 +149,24 @@ services:
      - '--es.uri=http://es01:9200'
     ports:
       - 9018:9018
+    networks: 
+      - elastic
+  es02_exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    container_name: es02_exporter
+    command:
+     - '--es.uri=http://es02:9200'
+    ports:
+      - 9019:9018
+    networks: 
+      - elastic
+  es03_exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    container_name: es03_exporter
+    command:
+     - '--es.uri=http://es03:9200'
+    ports:
+      - 9020:9018
     networks: 
       - elastic
 volumes:
