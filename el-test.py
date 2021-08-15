@@ -48,7 +48,7 @@ import time
 
 def create_documents():
     actions = []
-    filelist = glob.glob("extracted/AA/*")
+    filelist = glob.glob("AA/*")
     for filename in tqdm.tqdm(filelist):
         with open(filename) as f:
             lines = f.readlines()
