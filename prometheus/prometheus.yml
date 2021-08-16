@@ -9,7 +9,7 @@ global:
 
 # 監視ルール設定ファイルのパス
 rule_files:
-  - /etc/prometheus/alert.rules
+  - /etc/prometheus/alert.rules.yaml
 # AlertManagerの設定
 alerting:
   alertmanagers:
@@ -58,15 +58,17 @@ scrape_configs:
     scrape_interval: 5s
     static_configs:
     - targets: ['node-exporter:9100']  
-  - job_name: 'es01_exporter'
-    scrape_interval: 5s
+  - job_name: 'blackbox_http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response.
     static_configs:
-    - targets: ['es01_exporter:9108']
-  - job_name: 'es02_exporter'
-    scrape_interval: 5s
-    static_configs:
-    - targets: ['es02_exporter:9108']
-  - job_name: 'es03_exporter'
-    scrape_interval: 5s
-    static_configs:
-    - targets: ['es03_exporter:9108']
+      - targets:
+        - http://es01:9200
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox_exporter:9115  # The blackbox exporter's real hostname:port.

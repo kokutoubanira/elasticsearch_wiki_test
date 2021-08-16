@@ -1,3 +1,17 @@
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.route('/', )
+def hello():
+    return jsonify({'message': 'hello internal'}), 200
+
+app.run()
+
+
+
+
+
 import requests
 import json
 response = requests.post(

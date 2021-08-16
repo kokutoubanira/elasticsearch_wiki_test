@@ -11,6 +11,7 @@ services:
       - cluster.initial_master_nodes=es01,es02,es03
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - TZ=Asia/Tokyo
     ulimits:
       memlock:
         soft: -1
@@ -19,6 +20,7 @@ services:
       - data01:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
+    restart: unless-stopped
     networks: 
       elastic:
 
@@ -33,6 +35,7 @@ services:
       - cluster.initial_master_nodes=es01,es02,es03
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - TZ=Asia/Tokyo
     ports:
       - 9300:9200
     ulimits:
@@ -41,6 +44,7 @@ services:
         hard: -1
     volumes:
       - data02:/usr/share/elasticsearch/data
+    restart: unless-stopped
     networks: 
       elastic:
 
@@ -55,6 +59,7 @@ services:
       - cluster.initial_master_nodes=es01,es02,es03
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - TZ=Asia/Tokyo
     ports:
       - 9400:9200
     ulimits:
@@ -63,14 +68,17 @@ services:
         hard: -1
     volumes:
       - data03:/usr/share/elasticsearch/data
+    restart: unless-stopped
     networks: 
       elastic:
 
   cerebro:
     image: lmenezes/cerebro:0.9.3
+    container_name: cerebro
     ports:
       - 9000:9000
     environment:
+      TZ: Asia/Tokyo
       HOSTS: >
         ES1,http://es01:9200
         ES2,httr-compose downtp://es03:9200
@@ -78,6 +86,7 @@ services:
       - es01:es01
       - es02:es02
       - es03:es03
+    restart: unless-stopped
     networks: 
       elastic:
 
@@ -86,6 +95,8 @@ services:
     container_name: cadvisor
     ports:
       - 8080:8080
+    environment: 
+      - TZ=Asia/Tokyo
     volumes:
       - /:/rootfs:ro
       - /var/run/docker.sock:/var/run/docker.sock:rw
@@ -98,8 +109,11 @@ services:
   prometheus:
     image: prom/prometheus:main
     container_name: prometheus
+    environment: 
+      - TZ=Asia/Tokyo
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert.rules.yaml:/etc/prometheus/alert.rules.yaml
     ports:
       - 9090:9090
     links:
@@ -108,9 +122,8 @@ services:
       - es03:es03
       - cadvisor:cadvisor
       - node-exporter:node-exporter
-      - es01_exporter:es01_exporter
-      - es02_exporter:es02_exporter
-      - es03_exporter:es03_exporter
+      - blackbox_exporter:blackbox_exporter
+    restart: unless-stopped
     networks: 
       elastic:
 
@@ -128,9 +141,11 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: password
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_USERS_ALLOW_ORG_CREATE: "false"
+      TZ: Asia/Tokyo
     volumes:
       - grafana_storage:/var/lib/grafana
       - ./grafana_provisioning/:/etc/grafana/provisioning/
+    restart: unless-stopped
     networks: 
       elastic:
 
@@ -138,19 +153,11 @@ services:
     image: prom/node-exporter:v1.2.0
     container_name: node-exporter
     restart: unless-stopped
-    # unix
-    # volumes: 
-    #   - /proc:/host/proc:ro
-    #   - /sys:/host/sys:ro
-    #   - /:/rootfs:ro
-    # command: 
-    #   - '--path.procfs=/host/proc' 
-    #   - '--path.sysfs=/host/sys'
-    #   - --collector.filesystem.ignored-mount-points
-    #   - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
+    environment: 
+      - TZ=Asia/Tokyo
     command: 
       - '--path.procfs=/host/proc' 
       - '--path.sysfs=/host/sys'
@@ -158,36 +165,7 @@ services:
       - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
     ports:
       - '9100:9100'
-    networks: 
-      elastic:
-
-  es01_exporter:
-    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
-    container_name: es01_exporter
-    command:
-     - '--es.uri=http://es01:9200'
-    ports:
-      - 9018:9018
-    networks: 
-      elastic:
-
-  es02_exporter:
-    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
-    container_name: es02_exporter
-    command:
-     - '--es.uri=http://es02:9200'
-    ports:
-      - 9019:9018
-    networks: 
-      elastic:
-
-  es03_exporter:
-    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
-    container_name: es03_exporter
-    command:
-     - '--es.uri=http://es03:9200'
-    ports:
-      - 9020:9018
+    restart: unless-stopped
     networks: 
       elastic:
 
@@ -195,17 +173,30 @@ services:
     image: prom/alertmanager
     container_name: alertmanager
     hostname: alertmanager
+    environment: 
+      - TZ=Asia/Tokyo
     volumes:
       - ./alertmanager:/etc/alertmanager
     command:
       - "--config.file=/etc/alertmanager/config.yaml"
       # https://example.com/alertmanager のようにサブディレクトリを切る場合
       #- "--web.route-prefix=/alertmanager"
+    restart: unless-stopped
     networks: 
       elastic:
     ports:
       - 9093:9093
-
+  blackbox_exporter:
+    image: prom/blackbox-exporter:latest
+    volumes:
+      - ./blackbox_exporter/config.yml:/etc/blackbox_exporter/config.yml
+    command:
+      - "--config.file=/etc/blackbox_exporter/config.yml"
+    ports:
+      - 9115:9115
+    networks: 
+      elastic:
+    
 volumes:
   data01:
     driver: local
@@ -220,5 +211,6 @@ volumes:
     
 networks:
   elastic:
-    driver: bridge
     external: true
+    driver: bridge
+    
